@@ -1,4 +1,5 @@
 from config.config_loader import load_config
+from actions.move_action import execute_move
 from config.errors import ConfigError
 
 def main():
@@ -9,15 +10,20 @@ def main():
         if config is None:
             # 初回生成時はここで終了
             return
-        
-        print(f"読み込み成功。")
-        print(f"現在の対象ディレクトリ: {config.get('source_directory')}")
-        # 今後ここに実行ロジックを追加
+        print("読み込み成功。")
 
     except ConfigError as e:
         print(f"[Config Error] 設定内容に問題があります: {e}")
+        return
     except Exception as e:
         print(f"[Unexpected Error] 予期せぬエラーが発生しました: {e}")
+        return
+    try:
+        execute_move(config)
+    except Exception as e:
+        print(f"[Unexpected Error] 予期せぬエラーが発生しました: {e}")
+        return
+
 
 if __name__ == "__main__":
     main()

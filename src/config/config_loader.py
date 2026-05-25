@@ -13,6 +13,8 @@ def create_config_file():
     try:
         with CONFIG_FILE.open("w", encoding="utf-8") as f:
             json.dump(config, f, indent=4, ensure_ascii=False)
+        source_directory = Path(config["source_directory"])
+        source_directory.mkdir(parents=True, exist_ok=True)
     except Exception as e:
         raise IOError(f"設定ファイルの生成に失敗しました: {e}")
 
