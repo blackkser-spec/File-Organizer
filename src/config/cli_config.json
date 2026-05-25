@@ -4,28 +4,27 @@
     "split_by_extension": true,
     "rules": [
         {
-            "extensions": [
-                ".jpg",
-                ".jpeg"
-            ],
+            "extension": ".jpg",
             "destination": "images"
         },
         {
-            "extensions": [
-                ".mp4"
-            ],
+            "extension": ".jpeg",
+            "destination": "images"
+        },
+        {
+            "extension": ".png",
+            "destination": "images"
+        },
+        {
+            "extension": ".mp4",
             "destination": "videos"
         },
         {
-            "extensions": [
-                ".mp3"
-            ],
+            "extension": ".mp3",
             "destination": "music/mp3"
         },
         {
-            "extensions": [
-                ".txt"
-            ],
+            "extension": ".txt",
             "destination": "documents/txt"
         }
     ]
