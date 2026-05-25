@@ -1,0 +1,32 @@
+{
+    "source_directory": "Desktop",
+    "dry_run": true,
+    "split_by_extension": true,
+    "rules": [
+        {
+            "extensions": [
+                ".jpg",
+                ".jpeg"
+            ],
+            "destination": "images"
+        },
+        {
+            "extensions": [
+                ".mp4"
+            ],
+            "destination": "videos"
+        },
+        {
+            "extensions": [
+                ".mp3"
+            ],
+            "destination": "music/mp3"
+        },
+        {
+            "extensions": [
+                ".txt"
+            ],
+            "destination": "documents/txt"
+        }
+    ]
+}
