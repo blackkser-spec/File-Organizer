@@ -1,5 +1,5 @@
 from config.config_loader import load_config
-from actions.move_action import execute_move
+from actions.move_action import move_flow
 from config.errors import ConfigError
 
 def main():
@@ -19,7 +19,7 @@ def main():
         print(f"[Unexpected Error] 予期せぬエラーが発生しました: {e}")
         return
     try:
-        execute_move(config)
+        move_flow(config)
     except Exception as e:
         print(f"[Unexpected Error] 予期せぬエラーが発生しました: {e}")
         return
