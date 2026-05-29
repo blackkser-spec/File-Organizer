@@ -1,20 +1,52 @@
 import shutil
+import json
 from pathlib import Path
+from config.errors import MoveError
 
-def check_destination(item, rules):
+LATEST_CHANGE_FILE = Path("data/latest_change.json")
+
+def get_destination(item, rules):
     item_suffix = item.suffix.lower()
     for rule in rules:
-        if item_suffix == rule.get("extension", "").lower():
+        if item_suffix == str(rule.get("extension", "")).lower():
             return rule.get("destination")
     return None
 
-def execute_move(item, destination_path):
-    destination_path.mkdir(parents=True, exist_ok=True)
-    shutil.move(item, destination_path / item.name) 
+def display_plan(moves, title="Move Plan"):
+    if not moves:
+        return
+    print(f"\n--- {title} ---")
+    for move in moves:
+        print(f'{move["src"].name} -> {move["dst"]}')
 
-def move_flow(config):
+def execute_moves(planned_moves):
+    for move in planned_moves:
+        try:
+            move["dst"].parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(move["src"], move["dst"])
+        except Exception as e:
+            raise MoveError(f"Failed to move {move['src']} -> {move['dst']}") from e
+    print(f"[SUCCESS] Moved {len(planned_moves)} files")
+
+def save_latest_change(planned_moves):
+    save_data = []
+    LATEST_CHANGE_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    for data in planned_moves:
+        save_data.append({"src": str(data["src"]), "dst": str(data["dst"])})
+
+    with LATEST_CHANGE_FILE.open("w", encoding="utf-8")as f:
+        json.dump(save_data, f, indent=4, ensure_ascii=False)
+
+def clear_history():
+    try:
+        if LATEST_CHANGE_FILE.exists():
+            LATEST_CHANGE_FILE.unlink()
+    except Exception as e:
+        raise MoveError(f"履歴ファイルの削除に失敗しました: {e}")
+
+def build_move_plan(config):
     source_directory = config.get("source_directory")
-    dry_run = config.get("dry_run")
     rules = config.get("rules")
     planned_moves = []
 
@@ -24,30 +56,29 @@ def move_flow(config):
         if not item.is_file():
             continue
 
-        destination = check_destination(item, rules)
+        destination = get_destination(item, rules)
         if not destination:
             continue
 
         destination_path = source_path / destination
-        
-        if dry_run:
-            planned_moves.append((item, destination_path))
-        else:
-            execute_move(item, destination_path)
+        move_info = {"src": item, "dst": destination_path / item.name}
+        planned_moves.append(move_info)
 
-    if dry_run:
-        if not planned_moves:
-            print("[INFO] 移動対象ファイルがありません。")
-            return
-        else:
-            print("\n--- Move Plan (Dry Run) ---")
-            for src, dst in planned_moves:
-                print(f"{src.name} -> {dst}")
-            
-            confirm = input("\n上記の内容で実行しますか？ (y, yesで実行): ").lower().strip()
-            if confirm in ["y", "yes"]:
-                for src, dst in planned_moves:
-                    execute_move(src, dst)
-                print("[SUCCESS] ファイルの移動が完了しました。")
-            else:
-                print("[CANCEL] 移動をキャンセルしました。")
+    return planned_moves
+    
+def build_undo_plan():
+    if not LATEST_CHANGE_FILE.exists():
+        return []
+
+    with LATEST_CHANGE_FILE.open("r", encoding="utf-8") as f:
+        history = json.load(f)
+
+    if not history:
+        return []
+
+    undo_moves = []
+
+    for move in history:
+        undo_moves.append({"src": Path(move["dst"]), "dst": Path(move["src"])})
+    
+    return undo_moves

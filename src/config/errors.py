@@ -9,3 +9,6 @@ class ExtensionError(RuleError):
 
 class DestinationError(RuleError):
     pass
+
+class MoveError(Exception):
+    pass
