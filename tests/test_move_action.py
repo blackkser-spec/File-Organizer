@@ -2,7 +2,7 @@ import pytest
 import json
 from pathlib import Path
 from config.errors import MoveError
-from actions import move_action
+from services import move_action
 
 
 @pytest.fixture

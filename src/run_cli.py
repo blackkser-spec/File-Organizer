@@ -1,5 +1,5 @@
 from config.config_loader import load_config, create_config_file
-from actions.move_action import build_move_plan, build_undo_plan, execute_moves, save_latest_change, clear_history
+from services.move_action import build_move_plan, build_undo_plan, execute_moves, save_latest_change, clear_history
 from config.errors import AppError, ConfigError
 from resources.text import TEXT
 
