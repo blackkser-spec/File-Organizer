@@ -37,7 +37,7 @@ class TestGetDestination:
         item = Path("test.jpg")
         rules = [{"extension": ".txt", "destination": "docs"}]
         # Act & Assert
-        assert move_action.get_destination(item, rules) is None
+        assert move_action.get_destination(item, rules) == "jpg"
 
 
 class TestExecuteMoves:

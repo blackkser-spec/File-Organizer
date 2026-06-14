@@ -1,5 +1,5 @@
 from config.config_loader import load_config, create_config_file
-from services.move_action import build_move_plan, build_undo_plan, execute_moves, save_latest_change, clear_history
+from services.move_action import build_move_plan, build_undo_plan, commit_move_plan, commit_undo_plan
 from config.errors import AppError, ConfigError
 from resources.text import TEXT
 
@@ -57,8 +57,7 @@ def main(command="move"):
                     print(f"[CANCEL] {TEXT['cancel']['move']}")
                     return
             
-            execute_moves(planned_moves)
-            save_latest_change(planned_moves)
+            commit_move_plan(planned_moves)
             print(f"[SUCCESS] {TEXT['success']['move_complete'].format(count=len(planned_moves))}")
 
         elif command == "undo":
@@ -72,8 +71,7 @@ def main(command="move"):
                 print(f"[CANCEL] {TEXT['cancel']['undo']}")
                 return
             
-            execute_moves(undo_moves)
-            clear_history()
+            commit_undo_plan(undo_moves)
             print(f"[SUCCESS] {TEXT['success']['undo_complete'].format(count=len(undo_moves))}")
         
         else:

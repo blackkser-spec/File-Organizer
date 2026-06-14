@@ -7,10 +7,12 @@ LATEST_CHANGE_FILE = Path("data/latest_change.json")
 
 def get_destination(item, rules):
     item_suffix = item.suffix.lower()
-    for rule in rules:
+    
+    for rule in rules or []:
         if item_suffix == str(rule.get("extension", "")).lower():
             return rule.get("destination")
-    return None
+        
+    return item_suffix.lstrip(".") or None
 
 def execute_moves(planned_moves):
     for move in planned_moves:
@@ -19,6 +21,14 @@ def execute_moves(planned_moves):
             shutil.move(move["src"], move["dst"])
         except Exception as e:
             raise MoveError("move_failed", src=move["src"], dst=move["dst"]) from e
+
+def commit_move_plan(planned_moves):
+    execute_moves(planned_moves)
+    save_latest_change(planned_moves)
+
+def commit_undo_plan(undo_moves):
+    execute_moves(undo_moves)
+    clear_history()
 
 def save_latest_change(planned_moves):
     try:
