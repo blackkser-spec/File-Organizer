@@ -6,7 +6,7 @@ from config.validator import validate_config
 from config.errors import ConfigError
 from typing import Any
 
-CONFIG_FILE = Path("config/cli_config.json")
+CONFIG_FILE = Path("config/config.json")
 
 def create_config_file():
     CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)

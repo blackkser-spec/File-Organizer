@@ -1,7 +1,7 @@
 from config.config_loader import load_config, create_config_file
 from services.move_action import build_move_plan, build_undo_plan, commit_move_plan, commit_undo_plan
 from config.errors import AppError, ConfigError
-from resources.text import TEXT
+from resources.texts.text import TEXT
 
 
 def user_confirm(prompt="\n実行しますか？ (y,yesで実行): "):

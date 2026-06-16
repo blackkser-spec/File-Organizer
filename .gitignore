@@ -21,7 +21,7 @@ Thumbs.db
 .env
 
 # local config
-src/config/cli_config.json
+src/config/config.json
 src/data/latest_change.json
 # test
 test_directory/

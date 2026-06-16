@@ -42,5 +42,9 @@ TEXT = {
         "extension_must_start_with_dot": "extension が . で始まっていません。",
         "destination_required": "destination が存在しません。",
         "destination_not_str": "destination が str ではありません。",
-    }
+    },
+        "gui": {
+            "col_name": "ファイル名",
+            "col_dest": "移動先フォルダ",
+        },
 }

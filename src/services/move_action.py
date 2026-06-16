@@ -28,6 +28,7 @@ def commit_move_plan(planned_moves):
 
 def commit_undo_plan(undo_moves):
     execute_moves(undo_moves)
+    remove_empty_directories(undo_moves)
     clear_history()
 
 def save_latest_change(planned_moves):
@@ -75,7 +76,6 @@ def build_move_plan(config):
 def build_undo_plan():
     if not LATEST_CHANGE_FILE.exists():
         return []
-
     try:
         with LATEST_CHANGE_FILE.open("r", encoding="utf-8") as f:
             history = json.load(f)
@@ -91,3 +91,17 @@ def build_undo_plan():
         return undo_moves
     except Exception as e:
         raise MoveError("read_history_failed", error=e)
+    
+def remove_empty_directories(undo_moves):
+    for move in undo_moves:
+        root_path = move["dst"].parent
+        current = move["src"].parent
+        while current.exists() and current.is_dir() and current != root_path:
+            # 安全のため、境界線の親ディレクトリまで遡らないようにチェック
+            if current in root_path.parents:
+                break
+            try:
+                current.rmdir()
+                current = current.parent
+            except OSError:
+                break
