@@ -46,5 +46,13 @@ TEXT = {
         "gui": {
             "col_name": "ファイル名",
             "col_dest": "移動先フォルダ",
+            "tooltip_browse_dir": "フォルダを選択",
+            "tooltip_move": "ファイルの移動",
+            "tooltip_undo": "元に戻す",
+            "tooltip_config_rules": "整頓ルールの編集",
+            "tooltip_refresh": "表示内容の更新", 
+            "filter_label": "拡張子フィルタ",
+            "master_toggle_all": "すべて選択",
+            "master_toggle_none": "すべて選択解除",
         },
 }
