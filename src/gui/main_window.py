@@ -96,12 +96,12 @@ class MainWindow(ctk.CTk):
         CTkToolTip(self.btn_move, TEXT["gui"]["tooltip_move"])
 
         self.btn_undo = ctk.CTkButton(self.toolbar, image=self.icon_undo, 
-                                      command=lambda: self.controller.undo(), **button_style)
+                                      command=lambda: self.controller.execute_undo(), **button_style)
         self.btn_undo.pack(side="left", padx=2, pady=5)
         CTkToolTip(self.btn_undo, TEXT["gui"]["tooltip_undo"])
 
         self.btn_refresh = ctk.CTkButton(self.toolbar, image=self.icon_refresh, 
-                                         command=lambda: self.controller.scan(), **button_style)
+                                         command=lambda: self.controller.execute_refresh(), **button_style)
         self.btn_refresh.pack(side="left", padx=2, pady=5)
         CTkToolTip(self.btn_refresh, TEXT["gui"]["tooltip_refresh"])
 
@@ -111,7 +111,7 @@ class MainWindow(ctk.CTk):
         CTkToolTip(self.btn_config, TEXT["gui"]["tooltip_config_rules"])
 
         # パス表示用ラベルの追加
-        self.path_label = ctk.CTkLabel(self.path_bar, text="Folder: -", font=ctk.CTkFont(size=12, slant="italic"))
+        self.path_label = ctk.CTkLabel(self.path_bar, text=TEXT["gui"]["path_label_default"], font=ctk.CTkFont(size=12, slant="italic"))
         self.path_label.pack(side="left", padx=15, pady=2)
 
         # Sidebar (Extension Filters)
@@ -133,7 +133,7 @@ class MainWindow(ctk.CTk):
         for check_state in self.extension_selection_vars.values():
             check_state.set(is_selected)
         self.master_toggle_checkbox.configure(text=TEXT["gui"]["master_toggle_none"] if is_selected else TEXT["gui"]["master_toggle_all"])
-        self.update_preview_table()
+        self.controller.refresh_preview()
 
     def _setup_treeview(self):
         # Treeviewのスタイル設定
@@ -154,7 +154,7 @@ class MainWindow(ctk.CTk):
 
         self.file_tree = ttk.Treeview(self.tree_container, columns=("name", "dest"), show="headings", selectmode="browse")
         self.file_tree.heading("name", text=TEXT["gui"]["col_name"], anchor="w")
-        self.file_tree.heading("dest", text=TEXT["gui"]["col_dest"], anchor="w")
+        self.file_tree.heading("dest", text=TEXT["gui"]["col_destination"], anchor="w")
         self.file_tree.column("name", width=300, minwidth=100)
         self.file_tree.column("dest", width=300, minwidth=100)
         
@@ -168,8 +168,15 @@ class MainWindow(ctk.CTk):
         self.scrollbar.pack(side="right", fill="y")
 
         # Footer
-        self.status_label = ctk.CTkLabel(self.footer, text="Status: Ready")
-        self.status_label.pack(side="left", padx=20)
+        # 移動予定のアイテム総数
+        self.move_item_count = ctk.CTkLabel(self.footer, text="0 items")
+        self.move_item_count.pack(side="left", padx=(10, 5))
+        # ステータスエリア
+        self.status_label = ctk.CTkLabel(self.footer, text=TEXT["gui"]["footer_status_default"])
+        self.status_label.pack(side="left", padx=5)
+        # Undoが実行可能か
+        self.undo_status = ctk.CTkLabel(self.footer, text="Undo: -")
+        self.undo_status.pack(side="right", padx=10)
 
     # --- View API (ControllerがUIを操作するための公開メソッド) ---
     def update_preview_table(self, planned_moves=None):
@@ -192,10 +199,17 @@ class MainWindow(ctk.CTk):
         self.file_tree.delete(*self.file_tree.get_children())
 
     def update_path_label(self, path):
-        self.path_label.configure(text=f"Folder: {path}")
+        self.path_label.configure(text=TEXT["gui"]["folder_display"].format(path=path))
+
+    def update_move_item_count(self, move: int, total: int):
+        self.move_item_count.configure(text=TEXT["gui"]["footer_move_item_count"].format(move=move, total=total))
 
     def update_status(self, text):
         self.status_label.configure(text=text)
+
+    def update_undo_status(self, available: bool):
+        text = TEXT["gui"]["footer_undo_available"] if available else TEXT["gui"]["footer_undo_unavailable"]
+        self.undo_status.configure(text=text)
 
     def update_extension_filters(self, extension_counts):
         # 既存のチェックボックスを削除
@@ -226,11 +240,10 @@ class MainWindow(ctk.CTk):
         # すべてにチェックが入っているか確認
         all_checked = all(var.get() for var in self.extension_selection_vars.values())
         
-        # 統合チェックボックスの状態とテキストを更新
         self.master_toggle_var.set(all_checked)
         self.master_toggle_checkbox.configure(text=TEXT["gui"]["master_toggle_none"] if all_checked else TEXT["gui"]["master_toggle_all"])
         
-        self.update_preview_table()
+        self.controller.refresh_preview()
 
     def get_active_extensions(self):
         return {extension for extension, check_state in self.extension_selection_vars.items() if check_state.get()}

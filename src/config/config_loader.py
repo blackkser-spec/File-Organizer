@@ -6,7 +6,7 @@ from config.validator import validate_config
 from config.errors import ConfigError
 from typing import Any
 
-CONFIG_FILE = Path("config/config.json")
+CONFIG_FILE = Path(__file__).resolve().parent / "config.json"
 
 def create_config_file():
     CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -32,3 +32,8 @@ def load_config() -> dict[str, Any]:
 
     validate_config(data)
     return data
+
+def save_config(config_data):
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(config_data, f, indent=4, ensure_ascii=False)
+

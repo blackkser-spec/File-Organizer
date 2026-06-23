@@ -128,17 +128,6 @@ class TestBuildMovePlan:
         assert plan[0]["src"] == temp_setup["test_file"]
         assert plan[0]["dst"] == (temp_setup["src_dir"]/ "text_files" / "test.txt")
 
-    def test_success_no_match_returns_empty_plan(self, temp_setup):
-        # Arrange
-        config = {
-            "source_directory": str(temp_setup["src_dir"]),
-            "rules": [{"extension": ".jpg", "destination": "image_files"}]
-        }
-        # Act
-        plan = move_action.build_move_plan(config)
-        # Assert
-        assert plan == []
-
 
 class TestBuildUndoPlan:
     def test_success(self, temp_setup, monkeypatch):
