@@ -4,6 +4,8 @@ import os
 import copy
 from PIL import Image
 from resources.texts.text import TEXT
+from gui.gui_utils import load_icon
+
 
 class ConfigWindow(ctk.CTkToplevel):
     def __init__(self, parent, config_data, on_save_callback):
@@ -18,9 +20,7 @@ class ConfigWindow(ctk.CTkToplevel):
         self.grid_rowconfigure(2, weight=1)
 
         # 画像の読み込みパス設定
-        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        img_dir = os.path.join(base_path, "resources", "images")
-        self.icon_folder = ctk.CTkImage(light_image=Image.open(os.path.join(img_dir, "dir_select.png")), size=(20, 20))
+        self.icon_folder = load_icon("dir_select.png", size=(20, 20))
 
         # --- 入力エリア ---
         self.input_frame = ctk.CTkFrame(self)

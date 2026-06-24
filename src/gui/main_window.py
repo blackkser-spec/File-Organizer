@@ -1,9 +1,8 @@
 import customtkinter as ctk
 from tkinter import filedialog, ttk, messagebox
 import tkinter as tk
-import os
-from PIL import Image
 from resources.texts.text import TEXT
+from gui.gui_utils import load_icon
 
 class CTkToolTip:
     """マウスオーバー時にツールチップを表示するクラス"""
@@ -69,17 +68,13 @@ class MainWindow(ctk.CTk):
 
     def _setup_widgets(self):
         # Dir Bar
-        # 画像の読み込みパス設定
-        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        img_dir = os.path.join(base_path, "resources", "images")
-
         # アイコンの読み込み
         icon_size = (32, 32)
-        self.icon_folder = ctk.CTkImage(light_image=Image.open(os.path.join(img_dir, "dir_select.png")), size=icon_size)
-        self.icon_run = ctk.CTkImage(light_image=Image.open(os.path.join(img_dir, "move.png")), size=icon_size)
-        self.icon_undo = ctk.CTkImage(light_image=Image.open(os.path.join(img_dir, "undo.png")), size=icon_size)
-        self.icon_refresh = ctk.CTkImage(light_image=Image.open(os.path.join(img_dir, "refresh.png")), size=icon_size)
-        self.icon_config = ctk.CTkImage(light_image=Image.open(os.path.join(img_dir, "option.png")), size=icon_size)
+        self.icon_folder = load_icon("dir_select.png", size=icon_size)
+        self.icon_run = load_icon("move.png", size=icon_size)
+        self.icon_undo = load_icon("undo.png", size=icon_size)
+        self.icon_refresh = load_icon("refresh.png", size=icon_size)
+        self.icon_config = load_icon("option.png", size=icon_size)
 
         # ボタンの共通スタイル設定
         button_style = {"hover_color": "#D0E0FF", "fg_color": "transparent", "text": "", "width": 40, "height": 40}

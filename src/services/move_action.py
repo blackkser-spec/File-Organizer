@@ -2,8 +2,8 @@ import shutil
 import json
 from pathlib import Path
 from config.errors import MoveError
+from config.paths import LATEST_CHANGE_FILE
 
-LATEST_CHANGE_FILE = Path("data/latest_change.json")
 
 def get_destination(item, rules):
     item_suffix = item.suffix.lower()

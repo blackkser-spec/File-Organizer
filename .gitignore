@@ -3,10 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtual Environment
-venv/
-.venv/
-
 # VSCode
 .vscode/
 
@@ -20,8 +16,8 @@ Thumbs.db
 # Environment variables
 .env
 
-# local config
-src/config/config.json
-src/data/latest_change.json
+# Local runtime data
+data/
+
 # test
 test_directory/

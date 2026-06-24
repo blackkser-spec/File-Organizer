@@ -4,9 +4,9 @@ import copy
 from config.default import DEFAULT_CONFIG
 from config.validator import validate_config
 from config.errors import ConfigError
+from config.paths import CONFIG_FILE
 from typing import Any
 
-CONFIG_FILE = Path(__file__).resolve().parent / "config.json"
 
 def create_config_file():
     CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
