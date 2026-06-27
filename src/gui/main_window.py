@@ -40,7 +40,7 @@ class MainWindow(ctk.CTk):
         ctk.set_default_color_theme("blue")
 
         self.title("File Organizer GUI")
-        self.geometry("900x650")
+        self.geometry("800x600")
         self.controller = None
         self.current_planned_moves = []
 
@@ -49,10 +49,10 @@ class MainWindow(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
 
         # Frame配置
-        self.toolbar = ctk.CTkFrame(self, corner_radius=0)
-        self.path_bar = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
-        self.sidebar = ctk.CTkFrame(self, width=200, corner_radius=0)
-        self.preview_area = ctk.CTkFrame(self, corner_radius=0)
+        self.toolbar = ctk.CTkFrame(self, corner_radius=0, border_width=2, border_color="#C8C8C8")
+        self.path_bar = ctk.CTkFrame(self, corner_radius=0, fg_color="#F8F8F8", border_width=2, border_color="#D0D0D0")
+        self.sidebar = ctk.CTkFrame(self, width=200, corner_radius=0, border_width=2, border_color="#C8C8C8")
+        self.preview_area = ctk.CTkFrame(self, corner_radius=0, border_width=2, border_color="#C8C8C8")
         self.footer = ctk.CTkFrame(self, height=30, corner_radius=0)
 
         self.toolbar.grid(row=1, column=0, columnspan=2, sticky="ew")
@@ -106,7 +106,7 @@ class MainWindow(ctk.CTk):
         CTkToolTip(self.btn_config, TEXT["gui"]["tooltip_config_rules"])
 
         # パス表示用ラベルの追加
-        self.path_label = ctk.CTkLabel(self.path_bar, text=TEXT["gui"]["path_label_default"], font=ctk.CTkFont(size=12, slant="italic"))
+        self.path_label = ctk.CTkLabel(self.path_bar, text=TEXT["gui"]["path_label_default"], )
         self.path_label.pack(side="left", padx=15, pady=2)
 
         # Sidebar (Extension Filters)
@@ -117,8 +117,7 @@ class MainWindow(ctk.CTk):
     def _setup_sidebar(self):
         self.filter_label = ctk.CTkLabel(self.sidebar, text=TEXT["gui"]["filter_label"], font=ctk.CTkFont(weight="bold"))
         self.filter_label.pack(pady=(10, 5), padx=10)
-
-        self.filter_container = ctk.CTkScrollableFrame(self.sidebar, width=180, fg_color="transparent")
+        self.filter_container = ctk.CTkScrollableFrame(self.sidebar, width=180, fg_color="#FAFAFA", border_width=1, border_color="#DDDDDD")
         self.filter_container.pack(expand=True, fill="both", padx=5, pady=5)
         
         self.extension_selection_vars = {}  # {extension: BooleanVar}
@@ -164,31 +163,28 @@ class MainWindow(ctk.CTk):
 
         # Footer
         # 移動予定のアイテム総数
-        self.move_item_count = ctk.CTkLabel(self.footer, text="0 items")
+        self.move_item_count = ctk.CTkLabel(self.footer, text="0 items", width=190, anchor="w")
         self.move_item_count.pack(side="left", padx=(10, 5))
+        # 区切り
+        self.separator1 = ctk.CTkLabel(self.footer, text="|")
+        self.separator1.pack(side="left", padx=5)
         # ステータスエリア
         self.status_label = ctk.CTkLabel(self.footer, text=TEXT["gui"]["footer_status_default"])
         self.status_label.pack(side="left", padx=5)
         # Undoが実行可能か
         self.undo_status = ctk.CTkLabel(self.footer, text="Undo: -")
         self.undo_status.pack(side="right", padx=10)
+        # 区切り
+        self.separator2 = ctk.CTkLabel(self.footer, text="|")
+        self.separator2.pack(side="right", padx=5)
 
     # --- View API (ControllerがUIを操作するための公開メソッド) ---
-    def update_preview_table(self, planned_moves=None):
-        if planned_moves is not None:
-            self.current_planned_moves = planned_moves
-
+    def update_preview_table(self, rows):
         self.clear_preview()
-        selected_extensions = self.get_active_extensions()
 
-        # 新しい項目を追加
-        for i, move in enumerate(self.current_planned_moves):
-            extension = move["src"].suffix.lower() or "(no ext)"
-            # フィルタリングされている場合は移動先を空白にする
-            dest_display = move["dst"].parent.name if extension in selected_extensions else "-"
-            
+        for i, row in enumerate(rows):
             tag = "evenrow" if i % 2 == 0 else "oddrow"
-            self.file_tree.insert("", "end", values=(move["src"].name, dest_display), tags=(tag,))
+            self.file_tree.insert("", "end", values=(row["name"], row["destination"]), tags=(tag,))
 
     def clear_preview(self):
         self.file_tree.delete(*self.file_tree.get_children())
@@ -215,20 +211,43 @@ class MainWindow(ctk.CTk):
         if not extension_counts:
             return
 
+        # 「すべて選択/解除」
         self.master_toggle_var = ctk.BooleanVar(value=True)
-        self.master_toggle_checkbox = ctk.CTkCheckBox(self.filter_container, text=TEXT["gui"]["master_toggle_none"], 
-                                                      variable=self.master_toggle_var, 
-                                                      command=self._toggle_all_extensions,
-                                                      font=ctk.CTkFont(size=12, weight="bold"))
-        self.master_toggle_checkbox.pack(anchor="w", padx=10, pady=(5, 10))
+        self.master_toggle_checkbox = ctk.CTkCheckBox(
+            self.filter_container,
+            text=TEXT["gui"]["master_toggle_none"],
+            variable=self.master_toggle_var,
+            command=self._toggle_all_extensions,
+            font=ctk.CTkFont(size=12, weight="bold"),
+        )
+        self.master_toggle_checkbox.pack(fill="x", padx=5, pady=(5, 10))
 
-        # 新しい統計に基づいてチェックボックスを作成
+        # 拡張子一覧
         for extension, count in sorted(extension_counts.items()):
+            row = ctk.CTkFrame(
+                self.filter_container,
+                fg_color="#F8F8F8",
+            )
+            row.pack(fill="x", padx=5, pady=2)
+
             check_state = ctk.BooleanVar(value=True)
-            checkbox = ctk.CTkCheckBox(self.filter_container, text=f"{extension} ({count})", 
-                                       variable=check_state, font=ctk.CTkFont(size=12),
-                                       command=self._on_extension_toggled)
-            checkbox.pack(anchor="w", padx=10, pady=5)
+
+            checkbox = ctk.CTkCheckBox(
+                row,
+                text=extension,
+                variable=check_state,
+                command=self._on_extension_toggled,
+                font=ctk.CTkFont(size=12),
+            )
+            checkbox.pack(side="left", anchor="w")
+
+            count_label = ctk.CTkLabel(
+                row,
+                text=f"({count})",
+                font=ctk.CTkFont(size=12),
+            )
+            count_label.pack(side="right", padx=(0, 5))
+
             self.extension_selection_vars[extension] = check_state
 
     def _on_extension_toggled(self):

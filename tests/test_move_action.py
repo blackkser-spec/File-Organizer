@@ -98,7 +98,7 @@ class TestClearHistory:
         history_file.write_text("[]")
         monkeypatch.setattr(move_action, "LATEST_CHANGE_FILE", history_file)
         # Act
-        move_action.clear_history()
+        move_action.clear_undo_history()
         # Assert
         assert not history_file.exists()
 
@@ -110,7 +110,7 @@ class TestClearHistory:
 
         # Act & Assert
         with pytest.raises(MoveError) as excinfo:
-            move_action.clear_history()
+            move_action.clear_undo_history()
         assert excinfo.value.key == "delete_history_failed"
 
 

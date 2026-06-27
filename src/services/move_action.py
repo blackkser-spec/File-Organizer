@@ -29,7 +29,7 @@ def commit_move_plan(planned_moves):
 def commit_undo_plan(undo_moves):
     execute_moves(undo_moves)
     remove_empty_directories(undo_moves)
-    clear_history()
+    clear_undo_history()
 
 def save_latest_change(planned_moves):
     try:
@@ -43,8 +43,11 @@ def save_latest_change(planned_moves):
             json.dump(save_data, f, indent=4, ensure_ascii=False)
     except Exception as e:
         raise MoveError("save_history_failed", error=e)
+    
+def has_undo_history() -> bool:
+    return LATEST_CHANGE_FILE.exists()
 
-def clear_history():
+def clear_undo_history():
     if not LATEST_CHANGE_FILE.exists():
         return
     try:    

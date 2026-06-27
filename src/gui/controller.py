@@ -1,4 +1,4 @@
-from services.move_action import build_move_plan, commit_move_plan, build_undo_plan, commit_undo_plan
+from services.move_action import build_move_plan, commit_move_plan, build_undo_plan, commit_undo_plan, has_undo_history
 from config.config_loader import save_config
 from resources.texts.text import TEXT
 from gui.config_window import ConfigWindow
@@ -9,6 +9,7 @@ class OrganizerController:
         self.view = view
         self.config_data = config_data
         self.planned_moves = []
+        self.detected_extensions = {}
 
     def select_source_directory(self):
         new_dir = self.view.ask_directory()
@@ -22,21 +23,23 @@ class OrganizerController:
         
         self.view.clear_preview()
         self.view.update_path_label(self.config_data.get("source_directory", TEXT["gui"]["path_label_default"]))
+        self.view.update_undo_status(has_undo_history())
         self.planned_moves = build_move_plan(self.config_data)
         
         if not self.planned_moves:
             self.view.update_move_item_count(0, 0)
             self.view.update_status(TEXT["gui"]["footer_status_nothing_scaned_file"])
+            self.view.update_extension_filters({})
             return
             
         # 拡張子ごとの出現件数を集計
-        extension_counts = {}
+        self.detected_extensions = {}
         for move in self.planned_moves:
             extension_key = move["src"].suffix.lower() or "(no ext)"
-            extension_counts[extension_key] = extension_counts.get(extension_key, 0) + 1
+            self.detected_extensions[extension_key] = self.detected_extensions.get(extension_key, 0) + 1
         
         # UIのチェックボックスを更新
-        self.view.update_extension_filters(extension_counts)
+        self.view.update_extension_filters(self.detected_extensions)
         self.refresh_preview()
 
     def execute_move(self):
@@ -66,17 +69,28 @@ class OrganizerController:
         ]
     
     def refresh_preview(self):
-        filtered_moves = self.get_filtered_moves()
-        # プレビュー一覧を更新
-        self.view.update_preview_table(self.planned_moves)
-        # フッターの件数表示を更新
+        selected_extensions = self.view.get_active_extensions()
+
+        display_rows = []
+        for move in self.planned_moves:
+            extension = move["src"].suffix.lower() or "(no ext)"
+            display_rows.append({
+                "name": move["src"].name,
+                "destination": (
+                    move["dst"].parent.name
+                    if extension in selected_extensions
+                    else "-"
+                ),
+            })
+
+        self.view.update_preview_table(display_rows)
         self.view.update_move_item_count(
-            len(filtered_moves),
+            len(self.get_filtered_moves()),
             len(self.planned_moves),
         )
 
     def open_config_editor(self):
-        ConfigWindow(self.view, self.config_data, self._save_config_to_file)
+        ConfigWindow(self.view, self.config_data, self.detected_extensions, self._save_config_to_file)
 
     def _save_config_to_file(self, updated_config):
         try:

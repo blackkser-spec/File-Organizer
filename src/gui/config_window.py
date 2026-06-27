@@ -2,18 +2,20 @@ import customtkinter as ctk
 from tkinter import filedialog, messagebox, ttk
 import os
 import copy
-from PIL import Image
 from resources.texts.text import TEXT
 from gui.gui_utils import load_icon
+from config.default import DEFAULT_CONFIG
 
 
 class ConfigWindow(ctk.CTkToplevel):
-    def __init__(self, parent, config_data, on_save_callback):
+    def __init__(self, parent, config_data, detected_extensions, on_save_callback):
         super().__init__(parent)
+
         self.title(TEXT["gui"]["config_window_title"])
         self.geometry("600x400")
         self.original_config = copy.deepcopy(config_data)
         self.working_config = copy.deepcopy(config_data)
+        self.detected_extensions = detected_extensions
         self.on_save_callback = on_save_callback
 
         self.grid_columnconfigure(0, weight=1)
@@ -22,31 +24,39 @@ class ConfigWindow(ctk.CTkToplevel):
         # 画像の読み込みパス設定
         self.icon_folder = load_icon("dir_select.png", size=(20, 20))
 
-        # --- 入力エリア ---
+        # --- ルール追加エリア ---
         self.input_frame = ctk.CTkFrame(self)
         self.input_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
-        # 拡張子ラベル + 入力
-        self.lbl_ext = ctk.CTkLabel(self.input_frame, text=TEXT["gui"]["col_extension"])
-        self.lbl_ext.pack(side="left", padx=(10, 2), pady=10)
-        self.entry_ext = ctk.CTkEntry(self.input_frame, placeholder_text=TEXT["gui"]["cfg_extension_example"], width=80)
-        self.entry_ext.pack(side="left", padx=(2, 10), pady=10)
+        # --- 入力エリア一段目 ---
+        self.row1_frame = ctk.CTkFrame(self.input_frame)
+        self.row1_frame.pack(fill="x", padx=5, pady=(5, 2))
+        # 拡張子entry
+        self.lbl_ext = ctk.CTkLabel(self.row1_frame, text=TEXT["gui"]["col_extension"], width=100, anchor="w")
+        self.lbl_ext.pack(side="left")
+        extension_values = [ext.lstrip(".") for ext in sorted(self.detected_extensions.keys())]
+        self.combo_ext = ctk.CTkComboBox(self.row1_frame, values=extension_values, width=180)
+        self.combo_ext.pack(side="left", padx=5)
+        self.combo_ext.set("")
 
-        # 移動先ラベル + 入力
-        self.lbl_dest = ctk.CTkLabel(self.input_frame, text=TEXT["gui"]["col_destination"])
-        self.lbl_dest.pack(side="left", padx=(10, 2), pady=10)
-        self.entry_dest = ctk.CTkEntry(self.input_frame, placeholder_text=TEXT["gui"]["cfg_destination_example"], width=160)
-        self.entry_dest.pack(side="left", padx=(2, 5), pady=10)
+        # 追加ボタン
+        self.btn_add = ctk.CTkButton(self.row1_frame, text=TEXT["gui"]["cfg_add_rule"], 
+                                     command=self._add_rule, fg_color="#1f538d", width=100)
+        self.btn_add.pack(side="right", padx=10)
 
-        # フォルダ参照ボタン (アイコンのみ)
-        self.btn_browse_dest = ctk.CTkButton(self.input_frame, image=self.icon_folder, text="",
+        # --- 入力エリア二段目 ---
+        self.row2_frame = ctk.CTkFrame(self.input_frame)
+        self.row2_frame.pack(fill="x", padx=5, pady=(2, 5))
+        # 移動先entry
+        self.lbl_dest = ctk.CTkLabel(self.row2_frame, text=TEXT["gui"]["col_destination"], width=100, anchor="w")
+        self.lbl_dest.pack(side="left")
+        self.entry_dest = ctk.CTkEntry(self.row2_frame, placeholder_text=TEXT["gui"]["cfg_destination_example"], width=160)
+        self.entry_dest.pack(side="left", padx=5, fill="x", expand=True)
+        # フォルダ参照ボタン
+        self.btn_browse_dest = ctk.CTkButton(self.row2_frame, image=self.icon_folder, text="",
                                              command=self._pick_dest, width=32, height=32,
                                              fg_color="transparent", hover_color="#D0E0FF")
         self.btn_browse_dest.pack(side="left", padx=5)
-
-        self.btn_add = ctk.CTkButton(self.input_frame, text=TEXT["gui"]["cfg_add_rule"], 
-                                     command=self._add_rule, fg_color="#1f538d", width=100)
-        self.btn_add.pack(side="right", padx=10)
 
         # --- ルール一覧表示 ---
         self._setup_treeview()
@@ -57,22 +67,28 @@ class ConfigWindow(ctk.CTkToplevel):
         self.action_frame.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
 
         self.btn_edit = ctk.CTkButton(self.action_frame, text=TEXT["gui"]["cfg_edit_rule"], 
-                                      command=self._edit_selected_rule, fg_color="#606060")
+                                      command=self._edit_selected_rule, fg_color="#65A53B")
         self.btn_edit.pack(side="left", padx=5, expand=True, fill="x")
 
         self.btn_remove = ctk.CTkButton(self.action_frame, text=TEXT["gui"]["cfg_remove_rule"], 
                                         command=self._remove_selected_rule, fg_color="#a33333")
         self.btn_remove.pack(side="left", padx=5, expand=True, fill="x")
 
-        # --- フッター ---
-        self.btn_save = ctk.CTkButton(self, text=TEXT["gui"]["cfg_save_config"], 
+        # --- 初期化,保存ボタン ---
+        self.bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.bottom_frame.grid(row=4, column=0, padx=10, pady=10, sticky="ew")
+        self.btn_reset = ctk.CTkButton(self.bottom_frame, text=TEXT["gui"]["cfg_reset_config"], 
+                                       command=self._reset_config, fg_color="#606060")
+        self.btn_reset.pack(side="left", padx=5, expand=True, fill="x")
+        self.btn_save = ctk.CTkButton(self.bottom_frame, text=TEXT["gui"]["cfg_save_config"], 
                                       command=self._save_and_close)
-        self.btn_save.grid(row=4, column=0, padx=10, pady=10)
+        self.btn_save.pack(side="left", padx=5, expand=True, fill="x")
 
         # モーダル化
+        self.transient(parent)
         self.grab_set()
 
-        # ウィンドウを閉じる操作（Xボタン等）をハンドル
+        # Xボタン操作
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
 
     def _setup_treeview(self):
@@ -98,6 +114,7 @@ class ConfigWindow(ctk.CTkToplevel):
         self.tree.configure(yscrollcommand=self.scrollbar.set)
         self.scrollbar.pack(side="right", fill="y")
 
+
     def _pick_dest(self):
         path = filedialog.askdirectory()
         if path:
@@ -119,15 +136,15 @@ class ConfigWindow(ctk.CTkToplevel):
             self.entry_dest.insert(0, dest_path)
 
     def _add_rule(self):
-        ext = self.entry_ext.get().strip().lower()
+        ext = self.combo_ext.get().strip().lower()
         dest = self.entry_dest.get().strip()
         if not ext:
-            messagebox.showwarning("Error", TEXT["error"]["ext_required"])
+            messagebox.showwarning("Error", TEXT["error"]["ext_required"], parent=self)
             return
         if not ext.startswith("."):
             ext = "." + ext
         if not dest:
-            messagebox.showwarning("Error", TEXT["error"]["dest_required"])
+            messagebox.showwarning("Error", TEXT["error"]["dest_required"], parent=self)
             return
 
         # 既存ルールがあれば上書き、なければ追加
@@ -142,7 +159,7 @@ class ConfigWindow(ctk.CTkToplevel):
                 self.working_config["rules"] = []
             self.working_config["rules"].append(new_rule)
 
-        self.entry_ext.delete(0, "end")
+        self.combo_ext.set("")
         self.entry_dest.delete(0, "end")
         self._refresh_list()
 
@@ -154,12 +171,10 @@ class ConfigWindow(ctk.CTkToplevel):
         item = self.tree.item(selected[0])
         ext, dest = item['values']
         
-        self.entry_ext.delete(0, "end")
-        self.entry_ext.insert(0, ext)
+        self.combo_ext.delete(0, "end")
+        self.combo_ext.insert(0, ext)
         self.entry_dest.delete(0, "end")
         self.entry_dest.insert(0, dest)
-        
-        self._refresh_list()
 
     def _remove_selected_rule(self):
         selected = self.tree.selection()
@@ -169,6 +184,13 @@ class ConfigWindow(ctk.CTkToplevel):
         ext = self.tree.item(selected[0])['values'][0]
         self.working_config["rules"] = [r for r in self.working_config["rules"] if r["extension"] != ext]
         self._refresh_list()
+
+    def _reset_config(self):
+        if messagebox.askyesno(TEXT["gui"]["dialog_title_confirm"], TEXT["gui"]["cfg_dialog_reset_confirm"], parent=self):
+            self.working_config = copy.deepcopy(DEFAULT_CONFIG)
+            self._refresh_list()
+            self.combo_ext.set("")
+            self.entry_dest.delete(0, "end")
 
     def _refresh_list(self):
         self.tree.delete(*self.tree.get_children())
@@ -181,8 +203,12 @@ class ConfigWindow(ctk.CTkToplevel):
         self.destroy()
 
     def _on_closing(self):
-        if self.working_config != self.original_config:
-            if messagebox.askyesno("確認", "変更が保存されていません。閉じてもよろしいですか？"):
-                self.destroy()
-        else:
+        if self.working_config == self.original_config:
+            self.destroy()
+            return
+        
+        result = messagebox.askyesnocancel(TEXT["gui"]["dialog_title_confirm"], TEXT["gui"]["cfg_close_without_save"], parent=self)
+        if result is True:
+            self._save_and_close()
+        elif result is False:
             self.destroy()
